@@ -1,0 +1,239 @@
+C51 COMPILER V9.54   MAIN                                                                  07/04/2023 09:48:52 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\Objects\main.obj
+COMPILER INVOKED BY: E:\ele\keil\C51\BIN\C51.EXE main.c LARGE OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listin
+                    -gs\main.lst) OBJECT(.\Objects\main.obj)
+
+line level    source
+
+   1          #include <REG52.H>
+   2          #include <stdio.h>
+   3          #include <math.h>
+   4          #include <stdlib.h>
+   5          #include <intrins.h>
+   6          
+   7          #include <hd7279a.h>
+   8          #include <ds18b20.h>
+   9          #include <motor.h>
+  10          #include <para.h>
+  11          #include <pid.h>
+  12          #include <util.h>
+  13          #include <common.h>
+  14          
+  15          #define MAIN_MENU_NUM 5 // change it if add or reduce menu nums
+  16          
+  17          unsigned char MenuID = 0x00; // up to 1 bit means is enter menu,next bit means menu layer,last 3bits means
+             - main menu ,mid 3bits means submenu of main menu
+  18          unsigned char motorMode;
+  19          unsigned char paraMode=0;
+  20          extern char pidMenuMode;
+  21          
+  22          unsigned char key=0xff,lastKey=0xff;
+  23          float temp_now=0.;
+  24          unsigned char sped=50;
+  25          const unsigned char Number[10] = {LED_0,LED_1,LED_2,LED_3,LED_4,LED_5,LED_6,LED_7,LED_8,LED_9};
+  26          
+  27          unsigned char tP[8]     =   {LED_t, LED_P,  LED_LINE,   LED_NULL,   LED_1 + LED_DOT,  LED_NULL,   LED_NULL
+             -,   LED_NULL};
+  28          unsigned char run[8]    =   {LED_r, LED_u,  LED_n,      LED_LINE,   LED_2 + LED_DOT,  LED_NULL,   LED_NULL
+             -,   LED_NULL};
+  29          unsigned char Con[8]    =   {LED_C, LED_o,  LED_n,      LED_LINE,   LED_3 + LED_DOT,  LED_NULL,   LED_NULL
+             -,   LED_NULL};
+  30          unsigned char PA[8]     =   {LED_P, LED_A,  LED_LINE,   LED_NULL,   LED_4 + LED_DOT,  LED_NULL,   LED_NULL
+             -,   LED_NULL};
+  31          unsigned char PID[8]    =   {LED_P, LED_1,  LED_d,      LED_LINE,   LED_5 + LED_DOT,  LED_NULL,   LED_NULL
+             -,   LED_NULL};
+  32          unsigned char my[8]     =   {LED_n, LED_u,  LED_n,      LED_LINE,   LED_6 + LED_DOT,  LED_NULL,   LED_NULL
+             -,   LED_NULL};
+  33          
+  34          unsigned char score=0;
+  35          
+  36          void game(void)
+  37          {
+  38   1          static unsigned char i=0;
+  39   1          unsigned char j;
+  40   1          for(j=0; j<8; ++j)
+  41   1          {
+  42   2              LED[j] = LED_NULL;
+  43   2          }
+  44   1          LED[i] = LED_8;
+  45   1          delay(8000);
+  46   1          i = (i + 1) % 8;
+  47   1          switch(key)
+C51 COMPILER V9.54   MAIN                                                                  07/04/2023 09:48:52 PAGE 2   
+
+  48   1          {
+  49   2              case BUTTON_ENTER:
+  50   2                  if(i == 0)
+  51   2                  {
+  52   3                      score++;
+  53   3                      P2 = 0x00;
+  54   3                      delay(100000);
+  55   3                      P2 = 0xff;
+  56   3                  }
+  57   2                  
+  58   2          }
+  59   1      }
+  60          
+  61          
+  62          
+  63          void menu(void)
+  64          {   
+  65   1          unsigned char i=0;
+  66   1          switch(MenuID)
+  67   1          {
+  68   2              case MENU_MAIN_TD:
+  69   2                  for(i=0;i<8;++i) LED[i] = tP[i];
+  70   2                  return;
+  71   2              case MENU_MAIN_MT:
+  72   2                  for(i=0;i<8;++i) LED[i] = run[i];
+  73   2                  return;
+  74   2              case MENU_MAIN_MS:
+  75   2                  for(i=0;i<8;++i) LED[i] = Con[i];
+  76   2                  return;
+  77   2              case MENU_MAIN_PS:
+  78   2                  for(i=0;i<8;++i) LED[i] = PA[i];
+  79   2                  return;
+  80   2              case MUNU_MAIN_PID:
+  81   2                  for(i=0;i<8;++i) LED[i] = PID[i];
+  82   2                  
+  83   2                  return;      
+  84   2              case MENU_TEMP_DETE:
+  85   2                  showTemperature();
+  86   2                  LED[4] = LED_t;
+  87   2                  LED[5] = LED_P;
+  88   2                  LED[6] = LED_o;
+  89   2                  LED[7] = LED_C;
+  90   2                  return;
+  91   2              case MENU_MOTOR_TEST:
+  92   2                  motorTest(sped);
+  93   2                  return;
+  94   2              case MENU_MOTOR_SPEED:
+  95   2                  temp_now = showTemperature();
+  96   2                  motorControl(temp_now);
+  97   2                  return;
+  98   2              case MENU_PARA_SET:
+  99   2                  paraMenu();
+ 100   2                  return;
+ 101   2              case MUNU_PID:
+ 102   2                  temp_pid();
+ 103   2                  return;
+ 104   2           
+ 105   2              case MENU_PARA_MOTOR_TEST:
+ 106   2                  para_motorTest();
+ 107   2                  return;
+ 108   2              case MENU_PARA_MOTOT_SPEED:
+ 109   2                  //temp_now = showTemperature();
+C51 COMPILER V9.54   MAIN                                                                  07/04/2023 09:48:52 PAGE 3   
+
+ 110   2                  para_tempModift();
+ 111   2                  return;
+ 112   2          }
+ 113   1      }
+ 114          
+ 115          void switchMenu()
+ 116          {
+ 117   1          if(key == 0xff)
+ 118   1          {
+ 119   2              return;
+ 120   2          }
+ 121   1          else
+ 122   1          {
+ 123   2      
+ 124   2              if(lastKey == 0xff)
+ 125   2              {                     
+ 126   3                  if(0 == MenuID >> 6)
+ 127   3                  {
+ 128   4                      switch(key)
+ 129   4                      {
+ 130   5                          case BUTTON_DOWN:
+ 131   5                              MenuID = (MenuID + (MAIN_MENU_NUM - 1)) % MAIN_MENU_NUM; // may error
+ 132   5                              return;
+ 133   5                          case BUTTON_UP:
+ 134   5                              MenuID = (MenuID + 1) % MAIN_MENU_NUM;
+ 135   5                              return;
+ 136   5                          case BUTTON_ENTER:
+ 137   5                              MenuID = MenuID | 0x80;
+ 138   5                              if(MenuID == MUNU_PID)
+ 139   5                                  pidMenuMode = 0;
+ 140   5                              return;
+ 141   5                      }
+ 142   4                  }
+ 143   3                  else if(2 == MenuID >> 6)
+ 144   3                  {
+ 145   4                      if(MenuID == MUNU_PID)
+ 146   4                          return;
+ 147   4                      switch(key)
+ 148   4                      {
+ 149   5                          case BUTTON_LEFT:
+ 150   5                              MenuID = MenuID & 0x7f;
+ 151   5                              EA = 0;
+ 152   5                              motor = 0;
+ 153   5                              return;
+ 154   5                          case BUTTON_DOWN:
+ 155   5                              if(MenuID == MENU_MOTOR_TEST)
+ 156   5                              {
+ 157   6                                  motorMode = (motorMode + 9) % 10;
+ 158   6                                  sped = readByte_ee(motorMode);
+ 159   6                              }
+ 160   5                              else if(MenuID == MENU_PARA_SET)
+ 161   5                                  paraMode = (paraMode + 1) % 2;
+ 162   5                              break;
+ 163   5                          case BUTTON_UP:
+ 164   5                              if(MenuID == MENU_MOTOR_TEST)
+ 165   5                              {
+ 166   6                                  motorMode = (motorMode + 1) % 10;
+ 167   6                                  sped = readByte_ee(motorMode);
+ 168   6                              }
+ 169   5                              else if(MenuID == MENU_PARA_SET)
+ 170   5                                  paraMode =(paraMode + 1) % 2;
+ 171   5                              break;
+C51 COMPILER V9.54   MAIN                                                                  07/04/2023 09:48:52 PAGE 4   
+
+ 172   5                          case BUTTON_ENTER:
+ 173   5                              if(MenuID == MENU_PARA_SET)
+ 174   5                                  MenuID = MenuID | 0x40 + (paraMode << 3);
+ 175   5                              break;
+ 176   5                      }
+ 177   4                  }            
+ 178   3              }
+ 179   2          }
+ 180   1      }
+ 181          
+ 182          
+ 183          void main (void) 
+ 184          {   
+ 185   1          init_hd7279(); 
+ 186   1          init_ds18b20();
+ 187   1          init_motor();
+ 188   1          init_ee24c16_default();
+ 189   1          
+ 190   1              while(1)
+ 191   1              {  
+ 192   2              
+ 193   2              key = receiveByte_hd();
+ 194   2      
+ 195   2              switchMenu();
+ 196   2              menu();
+ 197   2              show();
+ 198   2              
+ 199   2              lastKey = key;
+ 200   2              }
+ 201   1      }
+ 202          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    658    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =     70    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
