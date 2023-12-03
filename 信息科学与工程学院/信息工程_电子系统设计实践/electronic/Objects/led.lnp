@@ -1,0 +1,11 @@
+".\Objects\STARTUP.obj",
+".\Objects\main.obj",
+".\Objects\hd7279a.obj",
+".\Objects\ds18b20.obj",
+".\Objects\common.obj",
+".\Objects\motor.obj",
+".\Objects\ee24c16.obj",
+".\Objects\para.obj",
+".\Objects\pid.obj" 
+TO ".\Objects\led" 
+PRINT(".\Listings\led.m51") RAMSIZE(256) 
